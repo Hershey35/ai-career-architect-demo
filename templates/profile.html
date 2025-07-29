@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Build Your Profile - AI Career Architect</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            padding: 20px;
+        }
+        .form-container {
+            max-width: 700px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+        button {
+            padding: 12px 24px;
+            background-color: #007bff;
+            border: none;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>Step 1: Build Your Profile</h2>
+        <form method="POST">
+            <label>Full Name:</label>
+            <input type="text" name="full_name" required>
+
+            <label>Email:</label>
+            <input type="email" name="email" required>
+
+            <label>Phone:</label>
+            <input type="text" name="phone">
+
+            <label>Education:</label>
+            <textarea name="education" rows="3" required></textarea>
+
+            <label>Experience:</label>
+            <textarea name="experience" rows="3" required></textarea>
+
+            <label>Skills:</label>
+            <textarea name="skills" rows="2" required></textarea>
+
+            <label>Achievements (optional):</label>
+            <textarea name="achievements" rows="2"></textarea>
+
+            <button type="submit">Save and Continue</button>
+        </form>
+    </div>
+</body>
+</html>
