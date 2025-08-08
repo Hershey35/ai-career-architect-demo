@@ -1,55 +1,89 @@
-from flask import Flask, render_template
-from flask import Flask, render_template, request, redirect
-from models.database import db, UserProfile, GeneratedDocument
-from models.resume_generator import generate_resume_and_cover_letter
+# from flask import Flask, render_template
+# from flask import Flask, render_template, request, redirect
+# from models.database import db, UserProfile, GeneratedDocument
+# from models.resume_generator import generate_resume_and_cover_letter
+# from werkzeug.utils import secure_filename
+# import os
+
+
+# app = Flask(__name__)
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///career_architect.db'
+# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# db.init_app(app)
+
+# with app.app_context():
+#     db.create_all()
+
+# @app.route("/")
+# def home():
+#     return render_template("index.html")
+
+# @app.route('/profile', methods=['GET', 'POST'])
+# def profile():
+#     if request.method == 'POST':
+#         profile = UserProfile(
+#             full_name=request.form['full_name'],
+#             email=request.form['email'],
+#             phone=request.form['phone'],
+#             education=request.form['education'],
+#             experience=request.form['experience'],
+#             skills=request.form['skills'],
+#             achievements=request.form['achievements']
+#         )
+#         db.session.add(profile)
+#         db.session.commit()
+#         return redirect(f'/upload-jd/{profile.id}')
+#     return render_template('profile.html')
+
+# @app.route('/upload-jd/<int:user_id>', methods=['GET', 'POST'])
+# def upload_jd(user_id):
+#     if request.method == 'POST':
+#         jd = request.form['job_description']
+#         user = UserProfile.query.get(user_id)        
+#         resume, cover = generate_resume_and_cover_letter(user, jd)
+#         doc = GeneratedDocument(
+#             user_id=user_id,
+#             job_description=jd,
+#             resume_text=resume,
+#             cover_letter_text=cover
+#         )
+#         db.session.add(doc)
+#         db.session.commit()
+#         return render_template('result.html', resume=resume, cover_letter=cover)
+
+#     return render_template('upload_jd.html', user_id=user_id)
+
+
+# if __name__ == "__main__":
+#     app.run(debug=True)
+
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+import os
+from flask_bcrypt import Bcrypt
+from flask_login import LoginManager
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///career_architect.db'
+
+# SQLite DB path
+base_dir = os.path.abspath(os.path.dirname(__file__))
+db_path = os.path.join(base_dir, 'ai_career.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db.init_app(app)
+app.config['SECRET_KEY'] = '962d1b3c5fe0e373ab0c59c6'
 
-with app.app_context():
-    db.create_all()
+db = SQLAlchemy(app)
+bcrypt=Bcrypt(app)
+login_manager = LoginManager(app)
+login_manager.login_view = "login_page"
+login_manager.login_message_category = "info"
 
-@app.route("/")
-def home():
-    return render_template("index.html")
+# Import routes and models AFTER db is defined
+from routes import *
+from models import *
 
-@app.route('/profile', methods=['GET', 'POST'])
-def profile():
-    if request.method == 'POST':
-        profile = UserProfile(
-            full_name=request.form['full_name'],
-            email=request.form['email'],
-            phone=request.form['phone'],
-            education=request.form['education'],
-            experience=request.form['experience'],
-            skills=request.form['skills'],
-            achievements=request.form['achievements']
-        )
-        db.session.add(profile)
-        db.session.commit()
-        return redirect(f'/upload-jd/{profile.id}')
-    return render_template('profile.html')
-
-@app.route('/upload-jd/<int:user_id>', methods=['GET', 'POST'])
-def upload_jd(user_id):
-    if request.method == 'POST':
-        jd = request.form['job_description']
-        user = UserProfile.query.get(user_id)        
-        resume, cover = generate_resume_and_cover_letter(user, jd)
-        doc = GeneratedDocument(
-            user_id=user_id,
-            job_description=jd,
-            resume_text=resume,
-            cover_letter_text=cover
-        )
-        db.session.add(doc)
-        db.session.commit()
-        return render_template('result.html', resume=resume, cover_letter=cover)
-
-    return render_template('upload_jd.html', user_id=user_id)
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+        print("✔ Tables created.")
     app.run(debug=True)

@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}
+    Upload the Resume
+{% endblock %}
+{% block content %}
+
+<div class="container mt-5">
+    <form method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        {{ form.resume_file.label() }}
+        {{ form.resume_file() }}
+        {{ form.submit() }}
+    </form>
+        
+        {% if parsed_result %}
+        <hr class="my-4">
+        <h4 class="mb-3">🔍 Resume Preview</h4>
+
+        
+        <div class="mb-3">
+            <strong>Skills:</strong>
+        <ul>
+            {% for skills in parsed_result.skills.split(',') %}
+                <li>{{ skills.strip() }}</li>
+            {% endfor %}
+        </ul>
+        </div>
+
+        <div class="mb-3">
+            <strong>Education:</strong>
+        <ul>
+            {% for education in parsed_result.education.split(',') %}
+                <li>{{ education.strip() }}</li>
+            {% endfor %}
+        </ul>
+        </div>
+
+        <div class="mb-3">
+            <strong>Experience:</strong>
+            <ul>
+                {% for experience in parsed_result.experience.split(',') %}
+                    <li>{{ experience.strip() }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="mb-3">
+            <strong>Achievements:</strong>
+            <ul>
+                {% for achivements in parsed_result.achievements.split(',') %}
+                    <li>{{ achivements.strip() }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+
+
+    </div>
+{% endblock %}
