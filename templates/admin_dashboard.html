@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}
+{% if current_user.is_admin %}
+    <h1 class="text-white">Admin Dashboard</h1>
+{% endif %}
+{% endblock %}
+{% block content %}
+<div class="container mt-4 text-white">
+    <h2>📊 Admin Dashboard</h2>
+    <hr>
+
+    <p>Total Resumes Uploaded: <strong>{{ total_uploads }}</strong></p>
+
+    <div class="mb-5">
+        <h4>📅 Uploads Over Time</h4>
+        <canvas id="uploadsChart" height="100"></canvas>
+    </div>
+
+    <div class="mb-5">
+        <h4>🏆 Top Skills</h4>
+        <ol>
+            {% for skill, count in top_skills %}
+                <li>{{ skill|capitalize }} — {{ count }}</li>
+            {% endfor %}
+        </ol>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    const rawData = {{ uploads_by_date | tojson | safe }};
+    console.log("Raw Data:", rawData);
+
+    // 1. Create a map for quick lookup
+    const dataMap = new Map(rawData.map(([date, count]) => [date, count]));
+
+    // 2. Get today and the earliest date from the data
+    const today = new Date();
+    const earliest = new Date(rawData[0][0]);
+
+    // 3. Build full date range, filling missing days with 0
+    const fullData = [];
+    for (let d = new Date(earliest); d <= today; d.setDate(d.getDate() + 1)) {
+        const dateStr = d.toISOString().split('T')[0];
+        fullData.push([dateStr, dataMap.get(dateStr) || 0]);
+    }
+
+    // 4. Prepare chart data
+    const labels = fullData.map(row => 
+        new Date(row[0]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    );
+    const counts = fullData.map(row => row[1]);
+
+    const ctx = document.getElementById('uploadsChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Uploads per Day',
+                data: counts,
+                borderColor: '#ffffff',
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                borderWidth: 2,
+                tension: 0.2,
+                pointBackgroundColor: '#ffffff',
+                pointRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: { color: 'white' }
+                }
+            },
+            scales: {
+                x: { 
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255, 255, 255, 0.2)' }
+                },
+                y: { 
+                    ticks: { 
+                        color: 'white',
+                        stepSize: 1,
+                        callback: value => Number.isInteger(value) ? value : null
+                    },
+                    grid: { color: 'rgba(255, 255, 255, 0.2)' },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+
+
+
+
+{% endblock %}

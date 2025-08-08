@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Resume–JD Match{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <h3>Match Resume to Job Description</h3>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            {{ form.resume_id.label() }}
+            {{ form.resume_id(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.job_description.label() }}
+            {{ form.job_description(class="form-control", rows="6") }}
+        </div>
+        {{ form.submit(class="btn btn-primary") }}
+    </form>
+
+    {% if match_score is not none %}
+    <hr>
+    <h4>Match Score: {{ match_score }}%</h4>
+    <p><strong>Matched Terms:</strong> {{ matched_terms|join(', ') }}</p>
+    {% endif %}
+</div>
+{% endblock %}
