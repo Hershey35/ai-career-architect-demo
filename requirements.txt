@@ -9,5 +9,9 @@ spacy
 openai
 python-dotenv
 reportlab
+<<<<<<< HEAD
 email-validator
 google
+=======
+email-validator
+>>>>>>> bbc6d3968a616c914a066ebdf11434d6ac36838e
