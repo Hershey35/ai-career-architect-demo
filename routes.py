@@ -7,9 +7,13 @@ import os
 import io
 from datetime import datetime
 from werkzeug.utils import secure_filename
-from AI_Logic import resume_parser,matching_logic,resume_coverletter,utils
+from AI_Logic import resume_parser,matching_logic,resume_coverletter,utils,resume_parser_test
 from sqlalchemy import func
 import json
+import os
+import openai
+import numpy as np
+from dotenv import load_dotenv
 
 @app.route('/')
 @app.route('/home')
@@ -74,42 +78,141 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+# @app.route('/upload_resume', methods=['GET', 'POST'])
+# @login_required
+# def upload_resume():
+#     form = UploadResumeForm()
+#     parsed_result = None
+#     if form.validate_on_submit():
+#         resume_file = request.files.get('resume_file')
+#         if resume_file:
+#             filename = secure_filename(resume_file.filename)
+#             file_contents = resume_file.read()
+#             parsed_result = resume_parser_test.resume_combine_parser(io.BytesIO(file_contents), filename)
+#             if "raw_text" not in parsed_result:
+#                 flash('Failed to extract raw text from resume.', category='danger')
+#                 return redirect(request.url)
+#             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+#             with open(file_path, 'wb') as f:
+#                 f.write(file_contents)
+#             uploaded = UploadedResume(
+#                 user_id=current_user.id,
+#                 file_path=file_path,
+#                 parsed_text=parsed_result.get('raw_text', ''),
+#                 skills=parsed_result.get('skills', ''),
+#                 education=parsed_result.get('education', ''),
+#                 experience=parsed_result.get('experience', ''),
+#                 achievements=parsed_result.get('achievements', '')
+#             )
+#             db.session.add(uploaded)
+#             db.session.commit()
+#             flash('Resume uploaded and parsed successfully!',category='success')
+#         else:
+#             flash('Invalid file type. Please upload a PDF or DOCX.',category= 'danger')
+#             return redirect(request.url)
+
+#     return render_template('upload_resume.html', form=form, parsed_result = parsed_result)
+
+# from flask import request, redirect, flash, render_template
+# from flask_login import login_required, current_user
+# from werkzeug.utils import secure_filename
+# import os
+# import io
+# from your_app import app, db  # Adjust to your app's import structure
+# from your_forms import UploadResumeForm  # Adjust to your form import
+# from AI_Logic.resume_parser_test import resume_combine_parser
+# from your_models import UploadedResume  # Adjust to your model import
+
+
+
+# @app.route('/upload_resume', methods=['GET', 'POST'])
+# @login_required
+# def upload_resume():
+#     form = UploadResumeForm()
+#     parsed_result = None
+#     if form.validate_on_submit():
+#         resume_file = request.files.get('resume_file')
+#         if resume_file:
+#             filename = secure_filename(resume_file.filename)
+#             file_contents = resume_file.read()
+#             try:
+#                 parsed_result = resume_parser_test.resume_combine_parser(io.BytesIO(file_contents), filename)
+#                 # Check if parsing produced valid sections
+#                 if not parsed_result or not any(parsed_result[section].get('raw_text') for section in parsed_result):
+#                     flash('Failed to extract text from resume.', category='danger')
+#                     return redirect(request.url)
+                
+#                 # Save file to UPLOAD_FOLDER
+#                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+#                 with open(file_path, 'wb') as f:
+#                     f.write(file_contents)
+                
+#                 # Extract fields from nested dictionary
+#                 uploaded = UploadedResume(
+#                     user_id=current_user.id,
+#                     file_path=file_path,
+#                     parsed_text=str(parsed_result),  # Store entire parsed_result as string
+#                     skills=', '.join(parsed_result.get('skills', {}).get('parsed_skills', [])),  # Join skills list
+#                     education=parsed_result.get('education', {}).get('raw_text', ''),
+#                     experience=parsed_result.get('experience', {}).get('raw_text', ''),
+#                     achievements=parsed_result.get('achievements', {}).get('raw_text', '')
+#                 )
+#                 db.session.add(uploaded)
+#                 db.session.commit()
+#                 flash('Resume uploaded and parsed successfully!', category='success')
+#             except ValueError as e:
+#                 flash(f'Error processing resume: {str(e)}', category='danger')
+#                 return redirect(request.url)
+#         else:
+#             flash('Invalid file type. Please upload a PDF or DOCX.', category='danger')
+#             return redirect(request.url)
+
+#     return render_template('uploaded_resume.html', form=form, parsed_result=parsed_result)
+
+import json
+
 @app.route('/upload_resume', methods=['GET', 'POST'])
 @login_required
 def upload_resume():
     form = UploadResumeForm()
-    parsed_result = None
+    parsed_result = {}
+
     if form.validate_on_submit():
         resume_file = request.files.get('resume_file')
-        
 
         if resume_file:
             filename = secure_filename(resume_file.filename)
             file_contents = resume_file.read()
-            parsed_result = resume_parser.resume_combine_parser(io.BytesIO(file_contents), filename)
-            if "raw_text" not in parsed_result:
+
+            parsed_result = resume_parser_test.resume_combine_parser(io.BytesIO(file_contents), filename)
+
+            if not parsed_result:
                 flash('Failed to extract raw text from resume.', category='danger')
                 return redirect(request.url)
+
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             with open(file_path, 'wb') as f:
                 f.write(file_contents)
+
             uploaded = UploadedResume(
                 user_id=current_user.id,
                 file_path=file_path,
-                parsed_text=parsed_result.get('full_text', ''),
-                skills=parsed_result.get('skills', ''),
-                education=parsed_result.get('education', ''),
-                experience=parsed_result.get('experience', ''),
-                achievements=parsed_result.get('achievements', '')
+                parsed_text=parsed_result.get("full_text", ""),
+                skills="\n".join(parsed_result.get("skills", [])) if isinstance(parsed_result.get("skills", []), list) else parsed_result.get("skills", ""),
+                education="\n".join(parsed_result.get("education", [])) if isinstance(parsed_result.get("education", []), list) else parsed_result.get("education", ""),
+                experience="\n".join(parsed_result.get("experience", [])) if isinstance(parsed_result.get("experience", []), list) else parsed_result.get("experience", ""),
+                achievements="\n".join(parsed_result.get("achievements", [])) if isinstance(parsed_result.get("achievements", []), list) else parsed_result.get("achievements", ""),
             )
             db.session.add(uploaded)
             db.session.commit()
-            flash('Resume uploaded and parsed successfully!',category='success')
+            flash('Resume uploaded and parsed successfully!', category='success')
+
         else:
-            flash('Invalid file type. Please upload a PDF or DOCX.',category= 'danger')
+            flash('Invalid file type. Please upload a PDF or DOCX.', category='danger')
             return redirect(request.url)
 
-    return render_template('upload_resume.html', form=form, parsed_result = parsed_result)
+    return render_template('uploaded_resume.html', form=form, parsed_result=parsed_result)
+
 
 @app.route('/my_resumes')
 @login_required
@@ -126,14 +229,43 @@ def view_resume(resume_id):
         abort(403)
     return send_file(resume.file_path)  # Opens in browser (if supported)
 
-# @app.route('/download_resume/<int:resume_id>')
+# @app.route('/match_resume_to_jd', methods=['GET', 'POST'])
 # @login_required
-# def download_resume(resume_id):
-#     resume = UploadedResume.query.get_or_404(resume_id)
-#     # Prevent other users from accessing files
-#     if resume.user_id != current_user.id:
-#         abort(403)
-#     return send_file(resume.file_path, as_attachment=True)  # Forces download
+# def match_resume_to_jd_route():
+#     form = MatchResumeToJDForm()
+#     form.resume_id.choices = [
+#         (r.id, os.path.basename(r.file_path)) 
+#         for r in UploadedResume.query.filter_by(user_id=current_user.id).all()
+#     ]
+#     match_score = None
+#     matched_terms = []
+
+#     if form.validate_on_submit():
+#         print("✅ Form submitted")
+#         resume = UploadedResume.query.get(form.resume_id.data)
+#         jd_text = form.job_description.data
+
+#         if not resume:
+#             flash("Resume not found.", "danger")
+#             return redirect(request.url)
+
+#         print(f"📄 Selected Resume ID: {resume.id}")
+#         print(f"📜 JD Text Length: {len(jd_text)}")
+
+#         match_score, matched_terms = matching_logic.match_resume_to_jd(resume.parsed_text, jd_text)
+
+#         print(f"🎯 Match Score: {match_score}%")
+#         print(f"🔍 Matched Terms: {matched_terms}")
+
+#         if match_score == 0:
+#             flash("No matching terms found between resume and JD.", "warning")
+
+#     return render_template(
+#         'match_resume_to_jd.html',
+#         form=form,
+#         match_score=match_score,
+#         matched_terms=matched_terms
+#     )
 
 @app.route('/match_resume_to_jd', methods=['GET', 'POST'])
 @login_required
@@ -146,18 +278,16 @@ def match_resume_to_jd_route():
     ]
 
     match_score = None
-    matched_terms = []
 
     if form.validate_on_submit():
         resume = UploadedResume.query.get(form.resume_id.data)
         jd_text = form.job_description.data
-        match_score, matched_terms = matching_logic.match_resume_to_jd(resume.parsed_text, jd_text)
+        match_score = matching_logic.match_resume_to_jd_openai(resume.parsed_text, jd_text)
 
     return render_template(
         'match_resume_to_jd.html',
         form=form,
-        match_score=match_score,
-        matched_terms=matched_terms
+        match_score=match_score
     )
 
 @app.route('/tailor_resume', methods=['GET', 'POST'])

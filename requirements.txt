@@ -1,1 +1,13 @@
 flask
+flask_sqlalchemy
+flask_bcrypt
+flask_login
+flask_wtf
+pdfplumber
+python-docx
+spacy
+openai
+python-dotenv
+reportlab
+email-validator
+google

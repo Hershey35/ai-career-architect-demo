@@ -20,36 +20,61 @@
         <div class="mb-3">
             <strong>Skills:</strong>
         <ul>
-            {% for skills in parsed_result.skills.split(',') %}
+            <!--{% for skills in parsed_result.skills.split(',') %}
                 <li>{{ skills.strip() }}</li>
-            {% endfor %}
+            {% endfor %} -->
+            {% if parsed_result.skills.raw_text %}
+                    <p>{{ parsed_result.skills.raw_text }}</p>
+            {% endif %}
         </ul>
+
+
         </div>
 
         <div class="mb-3">
             <strong>Education:</strong>
         <ul>
-            {% for education in parsed_result.education.split(',') %}
+            {% if parsed_result.education.raw_text %}
+                    <p>{{ parsed_result.education.raw_text }}</p>
+            {% endif %}
+            <!--{% for education in parsed_result.education.split(',') %}
                 <li>{{ education.strip() }}</li>
-            {% endfor %}
+            {% endfor %}-->>
         </ul>
         </div>
 
         <div class="mb-3">
             <strong>Experience:</strong>
             <ul>
-                {% for experience in parsed_result.experience.split(',') %}
+                {% if parsed_result.experience.raw_text %}
+                    <p>{{ parsed_result.experience.raw_text }}</p>
+                {% endif %}
+                <!-- {% for experience in parsed_result.experience.split(',') %}
                     <li>{{ experience.strip() }}</li>
-                {% endfor %}
+                {% endfor %} -->
             </ul>
         </div>
 
         <div class="mb-3">
             <strong>Achievements:</strong>
             <ul>
-                {% for achivements in parsed_result.achievements.split(',') %}
+                {% if parsed_result.achievements.raw_text %}
+                    <p>{{ parsed_result.achievements.raw_text }}</p>
+                {% endif %}
+                <!-- {% for achivements in parsed_result.achievements.split(',') %}
                     <li>{{ achivements.strip() }}</li>
-                {% endfor %}
+                {% endfor %} -->
+            </ul>
+        </div>
+        <div class="mb-3">
+            <strong>Extracted Text:</strong>
+            <ul>
+                <!-- {% for raw in parsed_result.raw_text.split(',') %}
+                    <li>{{ raw.strip() }}</li>
+                {% endfor %} -->
+                {% if parsed_result.raw_text %}
+                    <p>{{ parsed_result.raw_text }}</p>
+                {% endif %}
             </ul>
         </div>
         {% endif %}

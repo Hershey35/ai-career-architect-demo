@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}
+    Upload the Resume
+{% endblock %}
+{% block content %}
+<div class="container mt-5" style="color: white;">  {# Apply white text to entire container #}
+    <form method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        {{ form.resume_file.label() }}
+        {{ form.resume_file() }}
+        {{ form.submit() }}
+    </form>
+
+
+    {% for section, items in parsed_result.items() %}
+        {% if section != "full_text" %}
+            <h3>{{ section }}</h3>
+            <ul>
+                {% for item in items %}
+                    <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endfor %}
+
+
+</div>
+{% endblock %}
+
