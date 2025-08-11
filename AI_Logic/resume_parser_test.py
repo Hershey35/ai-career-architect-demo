@@ -63,7 +63,7 @@ def parse_docx(file: BytesIO) -> str:
     doc = docx.Document(file)
     return "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
 
-def clean_heading_text(text):
+def clean_heading_text(text):#remove any non-alphanumeric characters from the beginning of a text string.
     return re.sub(r'^[^a-zA-Z0-9]+', '', text).strip()
 
 def extract_section_blocks(lines: List[str]) -> Dict[str, Dict[str, str]]:
@@ -175,91 +175,6 @@ def normalize_line(line: str) -> str:
     """
     return re.sub(r'\s+', ' ', re.sub(r'(?<=\w)\s(?=\w)', '', line)).strip().lower()
 
-# def resume_combine_parser(file: BytesIO, filename: str) -> dict:
-#     file.seek(0)
-
-#     # --- Read file ---
-#     if filename.endswith(".pdf"):
-#         raw_text = parse_pdf(file)
-#     elif filename.endswith(".docx"):
-#         raw_text = parse_docx(file)
-#     else:
-#         raise ValueError("Unsupported file format")
-
-#     if not raw_text.strip():
-#         raise ValueError("Failed to extract raw text from resume.")
-
-#     # --- Extract lines ---
-#     lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
-#     section_blocks = {key: [] for key in SECTION_HEADINGS}
-
-#     current_section = None
-#     for line in lines:
-#         norm_line = normalize_line(line)
-#         found_section = False
-
-#         for section, keywords in SECTION_HEADINGS.items():
-#             # Allow "skills" section to also match "technical skills"
-#             # if section == "skills":
-#             #     keywords = keywords + ["technical skills"]
-#             if "Skills" not in pretty_result:
-#                 pretty_result["Skills"] = extract_skills(raw_text)
-
-
-#             if any(kw in norm_line for kw in keywords):
-#                 current_section = section
-#                 found_section = True
-#                 break
-
-#         if not found_section and current_section:
-#             section_blocks[current_section].append(line)
-
-#     # --- Prepare final result ---
-#     pretty_result = {"full_text": raw_text.strip()}  # store the whole resume text
-
-#     for section, content in section_blocks.items():
-#         if content:  # only include if not empty
-#             header = section.replace("_", " ").title()
-#             pretty_result[header] = content
-
-#     return pretty_result
-
-# def resume_combine_parser(file: BytesIO, filename: str) -> dict:
-#     file.seek(0)
-#     if filename.endswith(".pdf"):
-#         raw_text = parse_pdf(file)
-#     elif filename.endswith(".docx"):
-#         raw_text = parse_docx(file)
-#     else:
-#         raise ValueError("Unsupported file format")
-#     if not raw_text.strip():
-#         raise ValueError("Failed to extract raw text from resume.")
-#     pretty_result = {"full_text": raw_text.strip()}
-#     lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
-#     section_blocks = {key: [] for key in SECTION_HEADINGS}
-#     current_section = None
-
-#     for line in lines:
-#         norm_line = normalize_line(line)
-#         found_section = False
-#         for section, keywords in SECTION_HEADINGS.items():
-#             if any(kw in norm_line for kw in keywords):
-#                 current_section = section
-#                 found_section = True
-#                 break
-#         if not found_section and current_section:
-#             section_blocks[current_section].append(line)
-
-#     for section, content in section_blocks.items():
-#         if content:
-#             header = section.replace("_", " ").title()
-#             pretty_result[header] = content
-
-#     if "Skills" not in pretty_result:
-#         pretty_result["Skills"] = extract_skills(raw_text)
-
-#     return pretty_result
-
 def resume_combine_parser(file: BytesIO, filename: str) -> dict:
     file.seek(0)
     
@@ -272,11 +187,9 @@ def resume_combine_parser(file: BytesIO, filename: str) -> dict:
 
     if not raw_text.strip():
         raise ValueError("Failed to extract raw text from resume.")
-    
-    # --- Initialize result dictionary ---
+
     pretty_result = {"full_text": raw_text.strip()}
 
-    # --- Extract lines and sections ---
     lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
     section_blocks = {key: [] for key in SECTION_HEADINGS}
     current_section = None
@@ -294,13 +207,11 @@ def resume_combine_parser(file: BytesIO, filename: str) -> dict:
         if not found_section and current_section:
             section_blocks[current_section].append(line)
 
-    # --- Prepare final result ---
     for section, content in section_blocks.items():
         if content:
             header = section.replace("_", " ").title()
             pretty_result[header] = content
 
-    # Move this line outside the loop to be executed only once
     if "Skills" not in pretty_result:
         pretty_result["Skills"] = extract_skills(raw_text)
 
