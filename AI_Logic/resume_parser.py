@@ -34,45 +34,18 @@ def extract_section_blocks(lines: List[str]) -> Dict[str, str]:
 
     for i, line in enumerate(lines):
         line_lower = line.strip().lower()
-
-        # Determine if this line starts a new section
         for section, keywords in SECTION_HEADINGS.items():
             if any(kw in line_lower for kw in keywords):
                 current_section = section
                 break
-
-        # Assign line to current section if inside one
         if current_section:
             section_blocks[current_section].append(line)
 
-    # Final formatting
     for section in section_blocks:
-        section_blocks[section] = "\n".join(section_blocks[section]).strip("•o- \n")
+        # section_blocks[section] = "\n".join(section_blocks[section]).strip("•o- \n")
+        section_blocks[section] = " ".join(section_blocks[section]).strip("•o- \n")
 
     return section_blocks
-
-
-# def load_skill_vocab(csv_path: str = r"C:\Users\Dell\Documents\AI_LIFEBOT\fastapi_ai_career\Backend\AI_Logic\data\newSkills.csv") -> Set[str]:
-#     skills = set()
-#     with open(csv_path, newline='', encoding='utf-8') as csvfile:
-#         reader = csv.DictReader(csvfile)
-#         for row in reader:
-#             skill = row["Text"].strip().lower()
-#             if skill:
-#                 skills.add(skill)
-#     return skills
-# SKILL_VOCAB = load_skill_vocab()
-
-# def extract_skills(lines: List[str]) -> str:
-#     found = set()
-#     for line in lines:
-#         tokens = re.split(r"[|,/•\-]", line)
-#         for tok in tokens:
-#             tok = tok.strip().lower()
-#             if tok and tok in SKILL_VOCAB:
-#                 found.add(tok.title())
-#     return ", ".join(sorted(found))
-
 
 def extract_resume_fields(text: str) -> Dict[str, str]:
     lines = [line.strip() for line in text.splitlines() if line.strip()]
@@ -81,7 +54,6 @@ def extract_resume_fields(text: str) -> Dict[str, str]:
     
     fields = {
         "education": blocks.get("education", ""),
-        #"skills": extract_skills(lines),
         "skills":blocks.get("skills",""),
         "experience": blocks.get("experience", ""),
         "achievements": blocks.get("achievements", "")

@@ -7,7 +7,9 @@ import os
 import io
 from datetime import datetime
 from werkzeug.utils import secure_filename
-from AI_Logic import resume_parser,matching_logic,resume_coverletter,utils
+from AI_Logic import resume_parser,matching_logic,resume_coverletter,utils,resume_parser_test
+from sqlalchemy import func
+import numpy as np
 from sqlalchemy import func
 import json
 
@@ -15,12 +17,6 @@ import json
 @app.route('/home')
 def home_page():
     return render_template('home.html')
-
-# @app.route('/market')
-# @login_required
-# def market_page():
-#     items = Item.query.all()
-#     return render_template('market.html', items=items)
 
 @app.route('/register',methods=['GET','POST'])
 def register_page():
@@ -40,7 +36,6 @@ def register_page():
             flash(f'There was an error with creating a user: {err_msg}',category='danger')
         
     return render_template('register.html',form=form)
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login_page():
@@ -73,43 +68,48 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-
 @app.route('/upload_resume', methods=['GET', 'POST'])
 @login_required
 def upload_resume():
     form = UploadResumeForm()
-    parsed_result = None
+    parsed_result = {}
+
     if form.validate_on_submit():
         resume_file = request.files.get('resume_file')
-        
 
         if resume_file:
             filename = secure_filename(resume_file.filename)
             file_contents = resume_file.read()
-            parsed_result = resume_parser.resume_combine_parser(io.BytesIO(file_contents), filename)
-            if "raw_text" not in parsed_result:
+
+            parsed_result = resume_parser_test.resume_combine_parser(io.BytesIO(file_contents), filename)
+
+            if not parsed_result:
                 flash('Failed to extract raw text from resume.', category='danger')
                 return redirect(request.url)
+
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             with open(file_path, 'wb') as f:
                 f.write(file_contents)
+
             uploaded = UploadedResume(
                 user_id=current_user.id,
                 file_path=file_path,
-                parsed_text=parsed_result.get('full_text', ''),
-                skills=parsed_result.get('skills', ''),
-                education=parsed_result.get('education', ''),
-                experience=parsed_result.get('experience', ''),
-                achievements=parsed_result.get('achievements', '')
+                parsed_text=parsed_result.get("full_text", ""),
+                skills="\n".join(parsed_result.get("skills", [])) if isinstance(parsed_result.get("skills", []), list) else parsed_result.get("skills", ""),
+                education="\n".join(parsed_result.get("education", [])) if isinstance(parsed_result.get("education", []), list) else parsed_result.get("education", ""),
+                experience="\n".join(parsed_result.get("experience", [])) if isinstance(parsed_result.get("experience", []), list) else parsed_result.get("experience", ""),
+                achievements="\n".join(parsed_result.get("achievements", [])) if isinstance(parsed_result.get("achievements", []), list) else parsed_result.get("achievements", ""),
             )
             db.session.add(uploaded)
             db.session.commit()
-            flash('Resume uploaded and parsed successfully!',category='success')
+            flash('Resume uploaded and parsed successfully!', category='success')
+
         else:
-            flash('Invalid file type. Please upload a PDF or DOCX.',category= 'danger')
+            flash('Invalid file type. Please upload a PDF or DOCX.', category='danger')
             return redirect(request.url)
 
-    return render_template('upload_resume.html', form=form, parsed_result = parsed_result)
+    return render_template('uploaded_resume.html', form=form, parsed_result=parsed_result)
+
 
 @app.route('/my_resumes')
 @login_required
@@ -126,15 +126,6 @@ def view_resume(resume_id):
         abort(403)
     return send_file(resume.file_path)  # Opens in browser (if supported)
 
-# @app.route('/download_resume/<int:resume_id>')
-# @login_required
-# def download_resume(resume_id):
-#     resume = UploadedResume.query.get_or_404(resume_id)
-#     # Prevent other users from accessing files
-#     if resume.user_id != current_user.id:
-#         abort(403)
-#     return send_file(resume.file_path, as_attachment=True)  # Forces download
-
 @app.route('/match_resume_to_jd', methods=['GET', 'POST'])
 @login_required
 def match_resume_to_jd_route():
@@ -146,18 +137,16 @@ def match_resume_to_jd_route():
     ]
 
     match_score = None
-    matched_terms = []
 
     if form.validate_on_submit():
         resume = UploadedResume.query.get(form.resume_id.data)
         jd_text = form.job_description.data
-        match_score, matched_terms = matching_logic.match_resume_to_jd(resume.parsed_text, jd_text)
+        match_score = matching_logic.match_resume_to_jd_openai(resume.parsed_text, jd_text)
 
     return render_template(
         'match_resume_to_jd.html',
         form=form,
-        match_score=match_score,
-        matched_terms=matched_terms
+        match_score=match_score
     )
 
 @app.route('/tailor_resume', methods=['GET', 'POST'])
@@ -165,7 +154,6 @@ def match_resume_to_jd_route():
 def tailor_resume():
     form = TailorResumeForm()
 
-    # Populate dropdown
     user_resumes = UploadedResume.query.filter_by(user_id=current_user.id).all()
     form.resume_id.choices = [(r.id, os.path.basename(r.file_path)) for r in user_resumes]
 
@@ -214,14 +202,6 @@ def download_tailored(format):
     else:
         flash("Invalid file format.", "danger")
         return redirect(url_for('tailor_resume'))
-
-
-
-from flask import jsonify
-from sqlalchemy import func
-import json
-
-from flask import abort
 
 @app.route("/admin_dashboard")
 @login_required
